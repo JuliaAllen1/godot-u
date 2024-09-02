@@ -35,14 +35,14 @@
 #include "editor/export/editor_export.h"
 
 void register_wiiu_exporter_types() {
-	GDREGISTER_VIRTUAL_CLASS(EditorExportPlatformLinuxBSD);
+	GDREGISTER_VIRTUAL_CLASS(EditorExportPlatformWiiU);
 }
 
 void register_wiiu_exporter() {
-	Ref<EditorExportPlatformLinuxBSD> platform;
+	Ref<EditorExportPlatformWiiU> platform;
 	platform.instantiate();
 	platform->set_name("Wii U");
-	platform->set_os_name("Wii U");
+	platform->set_os_name("Cafe OS");
 	platform->set_chmod_flags(0755);
 
 	EditorExport::get_singleton()->add_export_platform(platform);

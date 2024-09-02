@@ -47,7 +47,7 @@
 #endif
 
 
-Error EditorExportPlatformLinuxBSD::_export_debug_script(const Ref<EditorExportPreset> &p_preset, const String &p_app_name, const String &p_pkg_name, const String &p_path) {
+Error EditorExportPlatformWiiU::_export_debug_script(const Ref<EditorExportPreset> &p_preset, const String &p_app_name, const String &p_pkg_name, const String &p_path) {
 	Ref<FileAccess> f = FileAccess::open(p_path, FileAccess::WRITE);
 	if (f.is_null()) {
 		add_message(EXPORT_MESSAGE_ERROR, TTR("Debug Script Export"), vformat(TTR("Could not open file \"%s\"."), p_path));
@@ -62,7 +62,7 @@ Error EditorExportPlatformLinuxBSD::_export_debug_script(const Ref<EditorExportP
 	return OK;
 }
 
-Error EditorExportPlatformLinuxBSD::export_project(const Ref<EditorExportPreset> &p_preset, bool p_debug, const String &p_path, BitField<EditorExportPlatform::DebugFlags> p_flags) {
+Error EditorExportPlatformWiiU::export_project(const Ref<EditorExportPreset> &p_preset, bool p_debug, const String &p_path, BitField<EditorExportPlatform::DebugFlags> p_flags) {
 	String custom_debug = p_preset->get("custom_template/debug");
 	String custom_release = p_preset->get("custom_template/release");
 	String arch = p_preset->get("binary_format/architecture");
@@ -149,11 +149,11 @@ Error EditorExportPlatformLinuxBSD::export_project(const Ref<EditorExportPreset>
 	return err;
 }
 
-String EditorExportPlatformLinuxBSD::get_template_file_name(const String &p_target, const String &p_arch) const {
+String EditorExportPlatformWiiU::get_template_file_name(const String &p_target, const String &p_arch) const {
 	return "linux_" + p_target + "." + p_arch;
 }
 
-List<String> EditorExportPlatformLinuxBSD::get_binary_extensions(const Ref<EditorExportPreset> &p_preset) const {
+List<String> EditorExportPlatformWiiU::get_binary_extensions(const Ref<EditorExportPreset> &p_preset) const {
 	List<String> list;
 	list.push_back(p_preset->get("binary_format/architecture"));
 	list.push_back("zip");
@@ -161,7 +161,7 @@ List<String> EditorExportPlatformLinuxBSD::get_binary_extensions(const Ref<Edito
 	return list;
 }
 
-bool EditorExportPlatformLinuxBSD::get_export_option_visibility(const EditorExportPreset *p_preset, const String &p_option) const {
+bool EditorExportPlatformWiiU::get_export_option_visibility(const EditorExportPreset *p_preset, const String &p_option) const {
 	if (p_preset == nullptr) {
 		return true;
 	}
@@ -179,7 +179,7 @@ bool EditorExportPlatformLinuxBSD::get_export_option_visibility(const EditorExpo
 	return true;
 }
 
-void EditorExportPlatformLinuxBSD::get_export_options(List<ExportOption> *r_options) const {
+void EditorExportPlatformWiiU::get_export_options(List<ExportOption> *r_options) const {
 	EditorExportPlatformPC::get_export_options(r_options);
 
 	r_options->push_back(ExportOption(PropertyInfo(Variant::STRING, "binary_format/architecture", PROPERTY_HINT_ENUM, "x86_64,x86_32,arm64,arm32,rv64,ppc64,ppc32"), "x86_64"));
@@ -203,25 +203,25 @@ void EditorExportPlatformLinuxBSD::get_export_options(List<ExportOption> *r_opti
 	r_options->push_back(ExportOption(PropertyInfo(Variant::STRING, "ssh_remote_deploy/cleanup_script", PROPERTY_HINT_MULTILINE_TEXT), cleanup_script));
 }
 
-bool EditorExportPlatformLinuxBSD::is_elf(const String &p_path) const {
+bool EditorExportPlatformWiiU::is_elf(const String &p_path) const {
 	Ref<FileAccess> fb = FileAccess::open(p_path, FileAccess::READ);
 	ERR_FAIL_COND_V_MSG(fb.is_null(), false, vformat("Can't open file: \"%s\".", p_path));
 	uint32_t magic = fb->get_32();
 	return (magic == 0x464c457f);
 }
 
-bool EditorExportPlatformLinuxBSD::is_shebang(const String &p_path) const {
+bool EditorExportPlatformWiiU::is_shebang(const String &p_path) const {
 	Ref<FileAccess> fb = FileAccess::open(p_path, FileAccess::READ);
 	ERR_FAIL_COND_V_MSG(fb.is_null(), false, vformat("Can't open file: \"%s\".", p_path));
 	uint16_t magic = fb->get_16();
 	return (magic == 0x2123);
 }
 
-bool EditorExportPlatformLinuxBSD::is_executable(const String &p_path) const {
+bool EditorExportPlatformWiiU::is_executable(const String &p_path) const {
 	return is_elf(p_path) || is_shebang(p_path);
 }
 
-bool EditorExportPlatformLinuxBSD::has_valid_export_configuration(const Ref<EditorExportPreset> &p_preset, String &r_error, bool &r_missing_templates, bool p_debug) const {
+bool EditorExportPlatformWiiU::has_valid_export_configuration(const Ref<EditorExportPreset> &p_preset, String &r_error, bool &r_missing_templates, bool p_debug) const {
 	String err;
 	bool valid = EditorExportPlatformPC::has_valid_export_configuration(p_preset, err, r_missing_templates, p_debug);
 
@@ -249,47 +249,11 @@ bool EditorExportPlatformLinuxBSD::has_valid_export_configuration(const Ref<Edit
 	return valid;
 }
 
-String EditorExportPlatformLinuxBSD::_get_exe_arch(const String &p_path) const {
-	Ref<FileAccess> f = FileAccess::open(p_path, FileAccess::READ);
-	if (f.is_null()) {
-		return "invalid";
-	}
-
-	// Read and check ELF magic number.
-	{
-		uint32_t magic = f->get_32();
-		if (magic != 0x464c457f) { // 0x7F + "ELF"
-			return "invalid";
-		}
-	}
-
-	// Process header.
-	int64_t header_pos = f->get_position();
-	f->seek(header_pos + 14);
-	uint16_t machine = f->get_16();
-	f->close();
-
-	switch (machine) {
-		case 0x0003:
-			return "x86_32";
-		case 0x003e:
-			return "x86_64";
-		case 0x0014:
-			return "ppc32";
-		case 0x0015:
-			return "ppc64";
-		case 0x0028:
-			return "arm32";
-		case 0x00b7:
-			return "arm64";
-		case 0x00f3:
-			return "rv64";
-		default:
-			return "unknown";
-	}
+String EditorExportPlatformWiiU::_get_exe_arch(const String &p_path) const {
+	return "ppc32";
 }
 
-Error EditorExportPlatformLinuxBSD::fixup_embedded_pck(const String &p_path, int64_t p_embedded_start, int64_t p_embedded_size) {
+Error EditorExportPlatformWiiU::fixup_embedded_pck(const String &p_path, int64_t p_embedded_start, int64_t p_embedded_size) {
 	// Patch the header of the "pck" section in the ELF file so that it corresponds to the embedded data.
 
 	Ref<FileAccess> f = FileAccess::open(p_path, FileAccess::READ_WRITE);
@@ -396,11 +360,11 @@ Error EditorExportPlatformLinuxBSD::fixup_embedded_pck(const String &p_path, int
 	return OK;
 }
 
-Ref<Texture2D> EditorExportPlatformLinuxBSD::get_run_icon() const {
+Ref<Texture2D> EditorExportPlatformWiiU::get_run_icon() const {
 	return run_icon;
 }
 
-bool EditorExportPlatformLinuxBSD::poll_export() {
+bool EditorExportPlatformWiiU::poll_export() {
 	Ref<EditorExportPreset> preset;
 
 	for (int i = 0; i < EditorExport::get_singleton()->get_export_preset_count(); i++) {
@@ -423,23 +387,23 @@ bool EditorExportPlatformLinuxBSD::poll_export() {
 	return menu_options != prev;
 }
 
-Ref<ImageTexture> EditorExportPlatformLinuxBSD::get_option_icon(int p_index) const {
+Ref<ImageTexture> EditorExportPlatformWiiU::get_option_icon(int p_index) const {
 	return p_index == 1 ? stop_icon : EditorExportPlatform::get_option_icon(p_index);
 }
 
-int EditorExportPlatformLinuxBSD::get_options_count() const {
+int EditorExportPlatformWiiU::get_options_count() const {
 	return menu_options;
 }
 
-String EditorExportPlatformLinuxBSD::get_option_label(int p_index) const {
+String EditorExportPlatformWiiU::get_option_label(int p_index) const {
 	return (p_index) ? TTR("Stop and uninstall") : TTR("Run on remote Linux/BSD system");
 }
 
-String EditorExportPlatformLinuxBSD::get_option_tooltip(int p_index) const {
+String EditorExportPlatformWiiU::get_option_tooltip(int p_index) const {
 	return (p_index) ? TTR("Stop and uninstall running project from the remote system") : TTR("Run exported project on remote Linux/BSD system");
 }
 
-void EditorExportPlatformLinuxBSD::cleanup() {
+void EditorExportPlatformWiiU::cleanup() {
 	if (ssh_pid != 0 && OS::get_singleton()->is_process_running(ssh_pid)) {
 		print_line("Terminating connection...");
 		OS::get_singleton()->kill(ssh_pid);
@@ -460,7 +424,7 @@ void EditorExportPlatformLinuxBSD::cleanup() {
 	cleanup_commands.clear();
 }
 
-Error EditorExportPlatformLinuxBSD::run(const Ref<EditorExportPreset> &p_preset, int p_device, BitField<EditorExportPlatform::DebugFlags> p_debug_flags) {
+Error EditorExportPlatformWiiU::run(const Ref<EditorExportPreset> &p_preset, int p_device, BitField<EditorExportPlatform::DebugFlags> p_debug_flags) {
 	cleanup();
 	if (p_device) { // Stop command, cleanup only.
 		return OK;
@@ -486,7 +450,7 @@ Error EditorExportPlatformLinuxBSD::run(const Ref<EditorExportPreset> &p_preset,
 	Vector<String> extra_args_ssh = p_preset->get("ssh_remote_deploy/extra_args_ssh").operator String().split(" ", false);
 	Vector<String> extra_args_scp = p_preset->get("ssh_remote_deploy/extra_args_scp").operator String().split(" ", false);
 
-	const String basepath = dest.path_join("tmp_linuxbsd_export");
+	const String basepath = dest.path_join("tmp_wiiu_export");
 
 #define CLEANUP_AND_RETURN(m_err)                      \
 	{                                                  \
@@ -606,7 +570,7 @@ Error EditorExportPlatformLinuxBSD::run(const Ref<EditorExportPreset> &p_preset,
 #undef CLEANUP_AND_RETURN
 }
 
-EditorExportPlatformLinuxBSD::EditorExportPlatformLinuxBSD() {
+EditorExportPlatformWiiU::EditorExportPlatformWiiU() {
 	if (EditorNode::get_singleton()) {
 #ifdef MODULE_SVG_ENABLED
 		Ref<Image> img = memnew(Image);

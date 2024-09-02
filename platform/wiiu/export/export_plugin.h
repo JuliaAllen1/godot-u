@@ -36,8 +36,8 @@
 #include "editor/export/editor_export_platform_pc.h"
 #include "scene/resources/image_texture.h"
 
-class EditorExportPlatformLinuxBSD : public EditorExportPlatformPC {
-	GDCLASS(EditorExportPlatformLinuxBSD, EditorExportPlatformPC);
+class EditorExportPlatformWiiU : public EditorExportPlatformPC {
+	GDCLASS(EditorExportPlatformWiiU, EditorExportPlatformPC);
 
 	HashMap<String, String> extensions;
 
@@ -90,7 +90,7 @@ public:
 	virtual Error run(const Ref<EditorExportPreset> &p_preset, int p_device, BitField<EditorExportPlatform::DebugFlags> p_debug_flags) override;
 	virtual void cleanup() override;
 
-	EditorExportPlatformLinuxBSD();
+	EditorExportPlatformWiiU();
 };
 
 #endif // LINUXBSD_EXPORT_PLUGIN_H
